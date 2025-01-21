@@ -1,0 +1,26 @@
+import streamlit as st
+
+# Sidebar file uploader
+uploaded_file = st.sidebar.file_uploader("Upload a file", type=["csv", "txt", "xlsx", "json"])
+
+# Display the uploaded file
+if uploaded_file is not None:
+    st.sidebar.success(f"File {uploaded_file.name} uploaded successfully!")
+    st.write("Contents of the uploaded file:")
+    
+    # Handling different file types
+    if uploaded_file.name.endswith(".csv"):
+        import pandas as pd
+        df = pd.read_csv(uploaded_file)
+        st.write(df)
+    elif uploaded_file.name.endswith(".txt"):
+        content = uploaded_file.read().decode("utf-8")
+        st.text(content)
+    elif uploaded_file.name.endswith(".xlsx"):
+        import pandas as pd
+        df = pd.read_excel(uploaded_file)
+        st.write(df)
+    elif uploaded_file.name.endswith(".json"):
+        import json
+        content = json.load(uploaded_file)
+        st.json(content)
