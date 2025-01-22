@@ -12,6 +12,10 @@ st.title("Bot-V1")
 eraser = st.empty()
 eraser.write("Upload the PDF to turn on the ChatBot")
 
+#########################################################################
+#  load the Model and implement Main logic here.
+#########################################################################
+
 
 with st.chat_message("assistant"):
     st.write("Hello there! How can I assist you today?")
@@ -35,11 +39,8 @@ if user_input := st.chat_input("Type your message here..."):
         st.markdown(f"User: {user_input}")
 #########################################################################
 
-
     # Generate bot response (Replace with your chatbot logic)
-    bot_response = f"Bot: {user_input}"  # Example response, replace with AI/logic
-
-
+    bot_response = f"Bot: {user_input}"  
     
 #########################################################################
     # Add bot message to the conversation
@@ -69,6 +70,16 @@ def show_pdf(pdf_file):
     pdf_base64 = base64.b64encode(pdf_data).decode("utf-8")
     pdf_embed_code = f'<iframe src="data:application/pdf;base64,{pdf_base64}" width="300" height="200" type="application/pdf"></iframe>'
     st.sidebar.markdown(pdf_embed_code, unsafe_allow_html=True)
+
+
+
+
+
+
+
+
+
+
 
 
 if file is not None:
