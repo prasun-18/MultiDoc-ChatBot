@@ -93,10 +93,8 @@ if uploaded_file is not None:
 # Main Interface 
 
 # main data variable -> uploaded_file 
-
-
-
-st.title("Bot-V2")
+ 
+st.title("Bot ~ V2")
 
 
 
@@ -144,8 +142,8 @@ if user_input := st.chat_input("Type your message here..."):
         message_placeholder.text(bot_response)
 
 
+#
 
-
-
-
-
+if st.button("Clear Chat",help="Click to clear the chat"):
+    st.session_state.messages = []  # Clear the chat history
+    st.rerun()
