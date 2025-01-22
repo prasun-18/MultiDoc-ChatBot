@@ -1,5 +1,5 @@
 # pip install streamlit pandas PyPDF2 python-docx openpyxl
-
+import time
 import streamlit as st
 import pandas as pd
 import json
@@ -92,8 +92,60 @@ if uploaded_file is not None:
 
 # Main Interface 
 
+# main data variable -> uploaded_file 
+
+
+
 st.title("Bot-V2")
 
-# main data variable -> uploaded_file 
+
+
+with st.chat_message("assistant"):
+    st.write("Hello there! How can I assist you today?")
+        
+# Initialize session state for storing conversation history
+if "messages" not in st.session_state:
+    st.session_state.messages = []  # List to store chat history
+
+# Display the conversation
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):  # Use 'assistant' or 'user' as role
+        st.markdown(message["content"])
+
+# Input box for user to type their message (((Bot response)))
+if user_input := st.chat_input("Type your message here..."):
+    # Add user message to the conversation
+    st.session_state.messages.append({"role": "user", "content": user_input})
+
+    # Display user message immediately
+    with st.chat_message("user"):
+        st.markdown(f"User: {user_input}")
+#########################################################################
+
+    # Generate bot response (Replace with your chatbot logic)
+    bot_response = f"Bot: {user_input}"  
+    
+#########################################################################
+    # Add bot message to the conversation
+    st.session_state.messages.append({"role": "assistant", "content": bot_response})
+
+    # Simulate chatbot "typing"
+    with st.chat_message("assistant"):
+        message_placeholder = st.empty()  # Placeholder for typing effect
+    
+        generated_text = ""
+
+        for char in bot_response:
+            generated_text += char  # Add the next character
+            message_placeholder.text(generated_text)  # Update placeholder
+            time.sleep(0.03)  # Adjust typing speed
+
+        # Replace placeholder with final message
+        message_placeholder.text(bot_response)
+
+
+
+
+
 
 
