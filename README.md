@@ -2,6 +2,9 @@
 ## Still working on it
 A custom chatbot tool which give answers of query if it is present in the different format of document (pdf,txt,docx,xlxs,json).
 ### intfloat/e5-small
+### all-MiniLM-L6-v2 (compact, fast, and effective)
+### multi-qa-MiniLM-L6-cos-v1 (fine-tuned for question answering and semantic search)
+### all-MPNet-base-v2 (higher accuracy with a larger model size)
 ```
 ! pip install streamlit -q
 ```
