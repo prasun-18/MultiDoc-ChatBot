@@ -1,7 +1,7 @@
 # MultiDoc--ChatBot 
 ## Still working on it
 A custom chatbot tool which give answers of query if it is present in the different format of document (pdf,txt,docx,xlxs,json).
-
+### intfloat/e5-small
 ```
 ! pip install streamlit -q
 ```
