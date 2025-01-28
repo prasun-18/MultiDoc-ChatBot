@@ -33,6 +33,12 @@ def read_excel(file_path):
     df = pd.read_excel(file_path)
     return df.to_string()
 
+def read_csv(file_path):
+    # Read CSV file as a DataFrame
+    df = pd.read_csv(file_path)
+    # Convert the DataFrame to a single string for processing
+    return df.to_string()
+
 def read_json(file_path):
     with open(file_path, 'r') as file:
         data = json.load(file)
@@ -46,6 +52,8 @@ def load_and_process_file(file_path):
         text = read_word(file_path)
     elif file_path.endswith('.xlsx'):
         text = read_excel(file_path)
+    elif file_path.endswith('.csv'):
+        text = read_csv(file_path)  # Handle CSV files
     elif file_path.endswith('.json'):
         text = read_json(file_path)
     else:
@@ -66,7 +74,7 @@ def create_vector_store(texts):
 # Step 6: Set Up the Question-Answering System
 def setup_qa_system(vector_store):
     # Provide your Hugging Face API token here
-    huggingface_api_token = "HugginG_Face_API"  # Replace with your actual API token
+    huggingface_api_token = "Replace with your actual API token"  # Replace with your actual API token
 
     # Use HuggingFaceEndpoint with the Falcon-7B-Instruct model
     llm = HuggingFaceEndpoint(
