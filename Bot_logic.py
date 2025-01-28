@@ -44,6 +44,11 @@ def read_json(file_path):
         data = json.load(file)
         return json.dumps(data)
 
+def read_txt(file_path):
+    with open(file_path, 'r', encoding='utf-8') as file:
+        text = file.read()
+    return text
+
 # Step 4: Load and Process Files
 def load_and_process_file(file_path):
     if file_path.endswith('.pdf'):
@@ -56,6 +61,8 @@ def load_and_process_file(file_path):
         text = read_csv(file_path)  # Handle CSV files
     elif file_path.endswith('.json'):
         text = read_json(file_path)
+    elif file_path.endswith('.txt'):
+        text = read_txt(file_path)  # Handle TXT files
     else:
         raise ValueError("Unsupported file type")
 
