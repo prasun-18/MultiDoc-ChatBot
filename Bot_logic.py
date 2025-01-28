@@ -116,9 +116,17 @@ def main():
         if question.lower() == 'exit':
             break
         try:
-            # Use invoke instead of run
-            answer = qa_system.invoke(question)
-            print(f"Answer: {answer}")
+            # Retrieve answer from the vector store
+            retrieval_result = vector_store.similarity_search_with_score(question, k=1)
+
+            # Check if the answer is from the file
+            if retrieval_result and retrieval_result[0][1] < 0.5:  # Threshold for similarity
+                print(f"Answer from the file: {retrieval_result[0][0].page_content}")
+            else:
+                # Use LLM to provide the answer if not found in the file
+                answer = qa_system.invoke(question)
+                print("Answer is not present in the provided file.")
+                print(f"Answer (from model): {answer}")
         except Exception as e:
             print(f"Error answering question: {e}")
 
