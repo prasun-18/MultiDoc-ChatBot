@@ -1,4 +1,4 @@
-# MultiDoc-ChatBot 🤖
+# Multiple Document Chatbot using Langchain/ MultiDoc-ChatBot 🤖
 
 MultiDoc-ChatBot is a Streamlit-based chatbot that allows users to upload multiple file formats (PDF, DOCX, CSV, JSON, TXT, XLSX) and interact with their contents using an AI-powered retrieval-based QA system. The chatbot leverages LangChain, FAISS for vector storage, and Hugging Face embeddings for natural language understanding.
 
