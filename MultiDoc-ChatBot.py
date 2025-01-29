@@ -156,3 +156,6 @@ if user_input := st.chat_input("Ask a question..."):
 if st.button("Clear Chat"):
     st.session_state.messages = []
     st.rerun()
+
+
+#For better compatibility with API calls over Google Colab, I recommend using a model like "tiiuae/falcon-7b-instruct" or "bigscience/bloomz-7b1", both of which are well-suited for answering questions and are optimized for inference tasks via the Hugging Face Inference API.
