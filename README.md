@@ -14,12 +14,12 @@ MultiDoc-ChatBot is a Streamlit-based chatbot that allows users to upload multip
 ## Output
 
 #### Initial view 
-- ![image alt](https://github.com/prasun-18/MultiDoc-ChatBot/blob/dd8ab63eee1f411ef632973580f14597f50ddb87/Output/Screenshot%201.png)
+ ![image alt](https://github.com/prasun-18/MultiDoc-ChatBot/blob/dd8ab63eee1f411ef632973580f14597f50ddb87/Output/Screenshot%201.png)
 #### Asking random/generic question
 - ![image alt](https://github.com/prasun-18/MultiDoc-ChatBot/blob/dd8ab63eee1f411ef632973580f14597f50ddb87/Output/Screenshot%202.png)
 #### Uploading a file to ask question from it
 - ![image alt](https://github.com/prasun-18/MultiDoc-ChatBot/blob/dd8ab63eee1f411ef632973580f14597f50ddb87/Output/Screenshot%203.png)
-#### Showing file upload is successfull along with the preview of the file
+#### Showing a file upload is successful along with the preview of the file
 - ![image alt](https://github.com/prasun-18/MultiDoc-ChatBot/blob/dd8ab63eee1f411ef632973580f14597f50ddb87/Output/Screenshot%204.png)
 #### Asking questions from the uploaded file
 - ![image alt](https://github.com/prasun-18/MultiDoc-ChatBot/blob/dd8ab63eee1f411ef632973580f14597f50ddb87/Output/Screenshot%205.png)
