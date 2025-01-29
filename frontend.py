@@ -106,7 +106,7 @@ if user_input := st.chat_input("Type your message here..."):
         for char in bot_response:
             generated_text += char  # Add the next character
             message_placeholder.text(generated_text)  # Update placeholder
-            time.sleep(0.03)  # Adjust typing speed
+            time.sleep(0.003)  # Adjust typing speed
         # Replace placeholder with final message
         message_placeholder.text(bot_response)
 

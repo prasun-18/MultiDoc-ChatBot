@@ -112,7 +112,7 @@ def main():
     # Set up QA system
     try:
         qa_system = setup_qa_system(vector_store)
-        print("Question-answering system is ready!")
+        print("Bot's Question-Answering system is ready!")
     except Exception as e:
         print(f"Error setting up QA system: {e}")
         return

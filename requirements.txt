@@ -1,0 +1,11 @@
+streamlit
+pypdf
+PyPDF2
+python-docx
+pandas
+jsonschema
+langchain
+langchain-community
+faiss-cpu
+torch
+transformers
