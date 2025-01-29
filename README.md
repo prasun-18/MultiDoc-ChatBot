@@ -18,7 +18,6 @@ Ensure you have Python installed (Python 3.8 or higher is recommended).
 ### Clone the Repository
 ```sh
 git clone https://github.com/prasun-18/MultiDoc-ChatBot.git
-cd MultiDoc-ChatBot
 ```
 
 ### Install Dependencies
@@ -30,7 +29,7 @@ pip install -r requirements.txt
 
 ### Running the Streamlit App locally
 ```sh
-streamlit run app.py
+streamlit run MultiDoc-ChatBot.py
 ```
 
 ### To run into google colab use these 3 command insted
@@ -42,6 +41,7 @@ streamlit run app.py
 ```
 ```
 !streamlit run MultiDoc-ChatBot.py & npx localtunnel --port 8501
+```
 
 ### Uploading a File
 1. Open the Streamlit web interface.
@@ -95,10 +95,10 @@ Or add it to your `.env` file.
 
 ---
 ### Here are some other small models you can explore and experiment with
- -intfloat/e5-small
- -all-MiniLM-L6-v2 (compact, fast, and effective)
- -multi-qa-MiniLM-L6-cos-v1 (fine-tuned for question answering and semantic search)
- -all-MPNet-base-v2 (higher accuracy with a larger model size)
+-intfloat/e5-small
+-all-MiniLM-L6-v2 (compact, fast, and effective)
+-multi-qa-MiniLM-L6-cos-v1 (fine-tuned for question answering and semantic search)
+-all-MPNet-base-v2 (higher accuracy with a larger model size)
 
 ---
 
