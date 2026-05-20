@@ -9,13 +9,12 @@ import streamlit as st
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 from langchain_huggingface import HuggingFaceEmbeddings
-#from langchain_huggingface import HuggingFaceEndpoint
+from langchain_huggingface import HuggingFaceEndpoint
 from langchain_community.llms import HuggingFaceHub
 from langchain_core.prompts import ChatPromptTemplate
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain.chains.retrieval import create_retrieval_chain
 
-# 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
 
 # =====================================================
 # FILE READERS
@@ -35,11 +34,9 @@ def read_pdf(file):
     return text
 
 
-
 def read_word(file):
     doc = docx.Document(file)
     return "\n".join(para.text for para in doc.paragraphs)
-
 
 
 def read_excel(file):
@@ -47,17 +44,14 @@ def read_excel(file):
     return df.to_string(index=False)
 
 
-
 def read_csv(file):
     df = pd.read_csv(file)
     return df.to_string(index=False)
 
 
-
 def read_json(file):
     data = json.load(file)
     return json.dumps(data, indent=4)
-
 
 
 def read_txt(file):
@@ -124,11 +118,13 @@ def setup_qa_system(vector_store):
 
     huggingface_api_token = "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"
 
+    # Switched to Llama 3.2 3B Instruct on native HF inference
     llm = HuggingFaceEndpoint(
-        repo_id="mistralai/Mistral-7B-Instruct-v0.3",
+        repo_id="meta-llama/Llama-3.2-3B-Instruct",
         huggingfacehub_api_token=huggingface_api_token,
         temperature=0.2,
         max_new_tokens=512,
+        provider="hf-inference",
     )
 
     prompt = ChatPromptTemplate.from_template(
@@ -171,11 +167,13 @@ def setup_general_chatbot():
 
     huggingface_api_token = "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"
 
+    # Switched to Llama 3.2 3B Instruct on native HF inference
     llm = HuggingFaceEndpoint(
-        repo_id="mistralai/Mistral-7B-Instruct-v0.3",
+        repo_id="meta-llama/Llama-3.2-3B-Instruct",
         huggingfacehub_api_token=huggingface_api_token,
         temperature=0.3,
         max_new_tokens=512,
+        provider="hf-inference",
     )
 
     return llm
