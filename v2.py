@@ -116,11 +116,11 @@ def create_vector_store(texts):
 
 def setup_qa_system(vector_store):
 
-    huggingface_api_token = "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"
+    huggingface_api_token = "hf_iHUIM"
 
     # Switched to Llama 3.2 3B Instruct on native HF inference
     llm = HuggingFaceEndpoint(
-        repo_id="meta-llama/Llama-3.2-3B-Instruct",
+        repo_id="meta-llama/Llama-3.2-3B-Instruct", #
         huggingfacehub_api_token=huggingface_api_token,
         temperature=0.2,
         max_new_tokens=512,
@@ -165,7 +165,7 @@ Answer:
 
 def setup_general_chatbot():
 
-    huggingface_api_token = "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"
+    huggingface_api_token = "hf_iH"
 
     # Switched to Llama 3.2 3B Instruct on native HF inference
     llm = HuggingFaceEndpoint(
