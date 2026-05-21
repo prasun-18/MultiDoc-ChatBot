@@ -1,361 +1,212 @@
-import json
-import time
+import os
+from pathlib import Path
 
+from dotenv import load_dotenv
+
+load_dotenv(Path(__file__).resolve().parent / ".env")
+
+# Suppress transformers deprecation noise when optional deps are probed.
+os.environ.setdefault("TRANSFORMERS_VERBOSITY", "error")
+
+import streamlit as st
+import PyPDF2
 import docx
 import pandas as pd
-import PyPDF2
-import streamlit as st
-
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+import json
+import time
+from langchain_text_splitters import CharacterTextSplitter
+from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
-from langchain_huggingface import HuggingFaceEmbeddings
-#from langchain_huggingface import HuggingFaceEndpoint
-from langchain_community.llms import HuggingFaceHub
-from langchain_core.prompts import ChatPromptTemplate
-from langchain.chains.combine_documents import create_stuff_documents_chain
-from langchain.chains.retrieval import create_retrieval_chain
+from langchain_classic.chains import RetrievalQA
+from langchain_huggingface import ChatHuggingFace, HuggingFaceEndpoint
 
-# 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
-
-# =====================================================
-# FILE READERS
-# =====================================================
+def _env(key: str, default: str | None = None) -> str:
+    return os.getenv(key, default or "")
 
 
+def _env_float(key: str, default: float) -> float:
+    return float(_env(key, str(default)))
+
+
+def _env_int(key: str, default: int) -> int:
+    return int(_env(key, str(default)))
+
+
+def _hf_api_token() -> str:
+    token = _env("HUGGINGFACEHUB_API_TOKEN")
+    if not token or token == "your_huggingface_token_here":
+        st.error(
+            "Missing Hugging Face API token. Copy `.env.example` to `.env` and set "
+            "`HUGGINGFACEHUB_API_TOKEN`."
+        )
+        st.stop()
+    return token
+
+
+def create_llm() -> ChatHuggingFace:
+    endpoint = HuggingFaceEndpoint(
+        repo_id=_env("HF_MODEL_ID", "meta-llama/Llama-3.2-1B-Instruct"),
+        huggingfacehub_api_token=_hf_api_token(),
+        temperature=_env_float("HF_TEMPERATURE", 0.2),
+        max_new_tokens=_env_int("HF_MAX_NEW_TOKENS", 512),
+    )
+    return ChatHuggingFace(llm=endpoint)
+
+# Function to read different file types
 def read_pdf(file):
     pdf_reader = PyPDF2.PdfReader(file)
-    text = ""
-
-    for page in pdf_reader.pages:
-        extracted = page.extract_text()
-
-        if extracted:
-            text += extracted
-
+    text = "".join(page.extract_text() for page in pdf_reader.pages)
     return text
-
-
 
 def read_word(file):
     doc = docx.Document(file)
     return "\n".join(para.text for para in doc.paragraphs)
 
-
-
 def read_excel(file):
     df = pd.read_excel(file)
-    return df.to_string(index=False)
-
-
+    return df.to_string()
 
 def read_csv(file):
     df = pd.read_csv(file)
-    return df.to_string(index=False)
-
-
+    return df.to_string()
 
 def read_json(file):
     data = json.load(file)
     return json.dumps(data, indent=4)
 
-
-
 def read_txt(file):
     return file.read().decode("utf-8")
 
-
-# =====================================================
-# LOAD & PROCESS DOCUMENTS
-# =====================================================
-
-
+# Load and process files
 def load_and_process_file(uploaded_file, file_type):
     if file_type == "pdf":
         text = read_pdf(uploaded_file)
-
     elif file_type == "docx":
         text = read_word(uploaded_file)
-
     elif file_type == "xlsx":
         text = read_excel(uploaded_file)
-
     elif file_type == "csv":
         text = read_csv(uploaded_file)
-
     elif file_type == "json":
         text = read_json(uploaded_file)
-
     elif file_type == "txt":
         text = read_txt(uploaded_file)
-
     else:
         st.error("Unsupported file type")
-        return []
-
-    splitter = RecursiveCharacterTextSplitter(
-        chunk_size=1000,
-        chunk_overlap=200,
+        return None
+    
+    text_splitter = CharacterTextSplitter(
+        chunk_size=_env_int("CHUNK_SIZE", 1000),
+        chunk_overlap=_env_int("CHUNK_OVERLAP", 200),
     )
+    return text_splitter.split_text(text)
 
-    return splitter.split_text(text)
-
-
-# =====================================================
-# VECTOR STORE
-# =====================================================
-
-
+# Create vector store
 def create_vector_store(texts):
     embeddings = HuggingFaceEmbeddings(
-        model_name="sentence-transformers/all-mpnet-base-v2"
+        model_name=_env("EMBEDDING_MODEL_NAME", "sentence-transformers/all-mpnet-base-v2")
     )
+    return FAISS.from_texts(texts, embeddings)
 
-    vector_store = FAISS.from_texts(texts, embeddings)
-
-    return vector_store
-
-
-# =====================================================
-# QA CHAIN
-# =====================================================
-
-
+# Set up QA system
 def setup_qa_system(vector_store):
-
-    huggingface_api_token = "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"
-
-    llm = HuggingFaceEndpoint(
-        repo_id="mistralai/Mistral-7B-Instruct-v0.3",
-        huggingfacehub_api_token=huggingface_api_token,
-        temperature=0.2,
-        max_new_tokens=512,
+    return RetrievalQA.from_chain_type(
+        llm=create_llm(),
+        chain_type="stuff",
+        retriever=vector_store.as_retriever(),
     )
-
-    prompt = ChatPromptTemplate.from_template(
-        """
-Answer the user's question using ONLY the provided context.
-
-Context:
-{context}
-
-Question:
-{input}
-
-Answer:
-"""
-    )
-
-    document_chain = create_stuff_documents_chain(
-        llm=llm,
-        prompt=prompt,
-    )
-
-    retriever = vector_store.as_retriever(
-        search_kwargs={"k": 3}
-    )
-
-    retrieval_chain = create_retrieval_chain(
-        retriever,
-        document_chain,
-    )
-
-    return retrieval_chain
-
-
-# =====================================================
-# GENERAL CHATBOT
-# =====================================================
 
 
 def setup_general_chatbot():
+    return create_llm()
 
-    huggingface_api_token = "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"
-
-    llm = HuggingFaceEndpoint(
-        repo_id="mistralai/Mistral-7B-Instruct-v0.3",
-        huggingfacehub_api_token=huggingface_api_token,
-        temperature=0.3,
-        max_new_tokens=512,
-    )
-
-    return llm
-
-
-# =====================================================
-# STREAMLIT UI
-# =====================================================
-
-
-st.set_page_config(
-    page_title="MultiDoc-ChatBot",
-    page_icon="🤖",
-    layout="wide",
-)
-
+# Streamlit UI
+st.set_page_config(page_title="MultiDoc-ChatBot", page_icon="🤖")
 st.title("MultiDoc-ChatBot 🤖")
 
-
-# =====================================================
-# SIDEBAR
-# =====================================================
-
-
-st.sidebar.title("Upload Documents")
-
-uploaded_file = st.sidebar.file_uploader(
-    "Choose a file",
-    type=["txt", "pdf", "docx", "json", "xlsx", "csv"],
-)
-
-
-# =====================================================
-# DOCUMENT PROCESSING
-# =====================================================
-
+# Sidebar for file upload
+st.sidebar.title("Upload a File")
+uploaded_file = st.sidebar.file_uploader("Choose a file", type=["txt", "pdf", "docx", "json", "xlsx", "csv"])
 
 if uploaded_file is not None:
-
-    file_type = uploaded_file.name.split(".")[-1].lower()
-
-    with st.sidebar:
-
-        with st.spinner("Processing document..."):
-
-            texts = load_and_process_file(uploaded_file, file_type)
-
-            vector_store = create_vector_store(texts)
-
-            qa_system = setup_qa_system(vector_store)
-
-            st.session_state.qa_system = qa_system
-
-            st.success(f"{uploaded_file.name} processed successfully")
-
-            st.subheader("Preview")
-
-            st.text_area(
-                "Content Preview",
-                "\n".join(texts[:5]),
-                height=250,
-            )
-
+    file_type = uploaded_file.name.split('.')[-1].lower()
+    texts = load_and_process_file(uploaded_file, file_type)
+    
+    if texts:
+        with st.sidebar:
+            with st.spinner("Processing document..."):
+                vector_store = create_vector_store(texts)
+                qa_system = setup_qa_system(vector_store)
+                st.session_state.qa_system = qa_system
+                st.sidebar.success(f"File '{uploaded_file.name}' processed successfully!")
+                
+                # Show file preview
+                st.sidebar.subheader("File Preview")
+                st.sidebar.text_area("Contents", "\n".join(texts[:10]), height=200)
 else:
-
     if "general_chatbot" not in st.session_state:
         st.session_state.general_chatbot = setup_general_chatbot()
 
 
-# =====================================================
-# CHAT MEMORY
-# =====================================================
 
+# Default chat message
+with st.chat_message("assistant"):
+    st.write("Hello there! How can I assist you today?")
 
+# Chat interface
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-
-# =====================================================
-# DISPLAY CHAT HISTORY
-# =====================================================
-
-
 for message in st.session_state.messages:
-
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-
-# =====================================================
-# CHAT INPUT
-# =====================================================
-
-
-user_input = st.chat_input("Ask something...")
-
-
-if user_input:
-
-    st.session_state.messages.append(
-        {
-            "role": "user",
-            "content": user_input,
-        }
-    )
-
+if user_input := st.chat_input("Ask a question..."):
+    st.session_state.messages.append({"role": "user", "content": user_input})
     with st.chat_message("user"):
         st.markdown(user_input)
-
-
-    # =========================================
-    # DOCUMENT QA
-    # =========================================
-
+    
     if "qa_system" in st.session_state:
-
         with st.chat_message("assistant"):
-
-            placeholder = st.empty()
-
-            response = st.session_state.qa_system.invoke(
-                {
-                    "input": user_input
-                }
-            )
-
-            answer = response.get("answer", "No answer found")
-
-            animated_text = ""
-
-            for char in answer:
-                animated_text += char
-                placeholder.markdown(animated_text)
-                time.sleep(0.002)
-
-            st.session_state.messages.append(
-                {
-                    "role": "assistant",
-                    "content": answer,
-                }
-            )
-
-
-    # =========================================
-    # GENERAL CHATBOT
-    # =========================================
-
+            message_placeholder = st.empty()
+            try:
+                bot_response = st.session_state.qa_system.invoke(user_input)
+            except Exception as e:
+                st.error(f"Could not get an answer: {e}")
+                st.stop()
+            
+            if isinstance(bot_response, dict):
+                extracted_response = bot_response.get("result", "No response available").strip()
+            else:
+                extracted_response = str(bot_response).strip()
+            
+            for i in range(len(extracted_response)):
+                message_placeholder.markdown(extracted_response[:i+1])
+                time.sleep(_env_float("TYPING_DELAY_DOC", 0.003))
+            
+            st.session_state.messages.append({"role": "assistant", "content": extracted_response})
     else:
-
         with st.chat_message("assistant"):
-
-            placeholder = st.empty()
-
-            response = st.session_state.general_chatbot.invoke(user_input)
-
-            animated_text = ""
-
-            for char in response:
-                animated_text += char
-                placeholder.markdown(animated_text)
-                time.sleep(0.002)
-
-            st.session_state.messages.append(
-                {
-                    "role": "assistant",
-                    "content": response,
-                }
-            )
-
-
-# =====================================================
-# CLEAR CHAT
-# =====================================================
-
+            message_placeholder = st.empty()
+            try:
+                bot_response = st.session_state.general_chatbot.invoke(user_input)
+            except Exception as e:
+                st.error(f"Could not get a response: {e}")
+                st.stop()
+            
+            if hasattr(bot_response, "content"):
+                extracted_response = bot_response.content.strip()
+            elif isinstance(bot_response, dict):
+                extracted_response = bot_response.get("result", "No response available").strip()
+            else:
+                extracted_response = str(bot_response).strip()
+            
+            for i in range(len(extracted_response)):
+                message_placeholder.markdown(extracted_response[:i+1])
+                time.sleep(_env_float("TYPING_DELAY_CHAT", 0.02))
+            
+            st.session_state.messages.append({"role": "assistant", "content": extracted_response})
 
 if st.button("Clear Chat"):
-
     st.session_state.messages = []
-
-    if "qa_system" in st.session_state:
-        del st.session_state.qa_system
-
     st.rerun()

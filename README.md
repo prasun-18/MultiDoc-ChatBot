@@ -44,6 +44,27 @@ git clone https://github.com/prasun-18/MultiDoc-ChatBot.git
 pip install -r requirements.txt
 ```
 
+### Environment Variables
+Copy the example env file and add your Hugging Face token:
+
+```sh
+cp .env.example .env
+```
+
+Edit `.env` and set at least `HUGGINGFACEHUB_API_TOKEN`. Other settings (model, chunk size, embeddings) are optional and have sensible defaults.
+
+| Variable | Description |
+|----------|-------------|
+| `HUGGINGFACEHUB_API_TOKEN` | Hugging Face API token (required) |
+| `HF_MODEL_ID` | LLM model for chat and Q&A |
+| `HF_TEMPERATURE` | Response randomness (0–1) |
+| `HF_MAX_NEW_TOKENS` | Max length of each reply |
+| `EMBEDDING_MODEL_NAME` | Model used for document search |
+| `CHUNK_SIZE` / `CHUNK_OVERLAP` | How uploaded text is split |
+| `TYPING_DELAY_DOC` / `TYPING_DELAY_CHAT` | UI typing animation speed |
+
+`.env` is gitignored; never commit API keys.
+
 ## Usage
 
 ### Running the Streamlit App locally

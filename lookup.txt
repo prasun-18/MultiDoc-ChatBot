@@ -1,0 +1,23 @@
+Embeddings — document search only
+
+Setting	 -> Default value
+EMBEDDING_MODEL_NAME ->	sentence-transformers/all-mpnet-base-v2
+
+Runs locally via HuggingFaceEmbeddings.
+Turns text chunks into vectors so FAISS can find chunks similar to your question.
+Not used for general chat when no document is uploaded (only the LLM is).
+all-mpnet-base-v2 is a strong general-purpose English embedding model; heavier than MiniLM but usually better for retrieval.
+-----------------------------------------------------------------------------------------------------------------------------
+Limits worth knowing
+One file per session (no multi-doc merge in one index).
+In-memory FAISS — re-upload after restart.
+LLM is small (1B) — good for demos; weaker than larger models on long or subtle documents.
+API-dependent — chat/Q&A need network + valid HF token; embeddings download on first use.
+“MultiDoc” in the name means multiple file types, not multiple files at once in the current code.
+---------------------------------------------------------------------------------------------------------------------------------
+Two modes in one app
+Mode - When - What runs
+General chat - No file in sidebar - ChatHuggingFace only
+Document Q&A - File uploaded & processed - FAISS retriever + RetrievalQA + same LLM
+Switching is automatic: upload clears the “general only” path and sets st.session_state.qa_system.
+--------------------------------------------------------------------------------------------------------------------------

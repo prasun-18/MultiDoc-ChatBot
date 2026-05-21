@@ -1,0 +1,4 @@
+[server]
+# Avoid scanning site-packages (e.g. transformers vision models) on every rerun.
+# Trade-off: saving the script no longer auto-reloads the app; refresh the browser instead.
+fileWatcherType = "none"
