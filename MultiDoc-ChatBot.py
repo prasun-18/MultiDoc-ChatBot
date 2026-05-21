@@ -1,15 +1,56 @@
-import streamlit as st
 import os
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+load_dotenv(Path(__file__).resolve().parent / ".env")
+
+# Suppress transformers deprecation noise when optional deps are probed.
+os.environ.setdefault("TRANSFORMERS_VERBOSITY", "error")
+
+import streamlit as st
 import PyPDF2
 import docx
 import pandas as pd
 import json
 import time
-from langchain.text_splitter import CharacterTextSplitter
-from langchain.embeddings import HuggingFaceEmbeddings
-from langchain.vectorstores import FAISS
-from langchain.chains import RetrievalQA
-from langchain_huggingface import HuggingFaceEndpoint
+from langchain_text_splitters import CharacterTextSplitter
+from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_community.vectorstores import FAISS
+from langchain_classic.chains import RetrievalQA
+from langchain_huggingface import ChatHuggingFace, HuggingFaceEndpoint
+
+def _env(key: str, default: str | None = None) -> str:
+    return os.getenv(key, default or "")
+
+
+def _env_float(key: str, default: float) -> float:
+    return float(_env(key, str(default)))
+
+
+def _env_int(key: str, default: int) -> int:
+    return int(_env(key, str(default)))
+
+
+def _hf_api_token() -> str:
+    token = _env("HUGGINGFACEHUB_API_TOKEN")
+    if not token or token == "your_huggingface_token_here":
+        st.error(
+            "Missing Hugging Face API token. Copy `.env.example` to `.env` and set "
+            "`HUGGINGFACEHUB_API_TOKEN`."
+        )
+        st.stop()
+    return token
+
+
+def create_llm() -> ChatHuggingFace:
+    endpoint = HuggingFaceEndpoint(
+        repo_id=_env("HF_MODEL_ID", "meta-llama/Llama-3.2-1B-Instruct"),
+        huggingfacehub_api_token=_hf_api_token(),
+        temperature=_env_float("HF_TEMPERATURE", 0.2),
+        max_new_tokens=_env_int("HF_MAX_NEW_TOKENS", 512),
+    )
+    return ChatHuggingFace(llm=endpoint)
 
 # Function to read different file types
 def read_pdf(file):
@@ -54,27 +95,30 @@ def load_and_process_file(uploaded_file, file_type):
         st.error("Unsupported file type")
         return None
     
-    text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+    text_splitter = CharacterTextSplitter(
+        chunk_size=_env_int("CHUNK_SIZE", 1000),
+        chunk_overlap=_env_int("CHUNK_OVERLAP", 200),
+    )
     return text_splitter.split_text(text)
 
 # Create vector store
 def create_vector_store(texts):
-    embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-mpnet-base-v2")
+    embeddings = HuggingFaceEmbeddings(
+        model_name=_env("EMBEDDING_MODEL_NAME", "sentence-transformers/all-mpnet-base-v2")
+    )
     return FAISS.from_texts(texts, embeddings)
 
 # Set up QA system
 def setup_qa_system(vector_store):
-    huggingface_api_token = "Replace with your hugging face API token"
-    llm = HuggingFaceEndpoint(repo_id="tiiuae/falcon-7b-instruct", 
-                              huggingfacehub_api_token=huggingface_api_token, 
-                              temperature=0.2)
-    return RetrievalQA.from_chain_type(llm=llm, chain_type="stuff", retriever=vector_store.as_retriever())
+    return RetrievalQA.from_chain_type(
+        llm=create_llm(),
+        chain_type="stuff",
+        retriever=vector_store.as_retriever(),
+    )
+
 
 def setup_general_chatbot():
-    huggingface_api_token = "Replace with your hugging face API token"
-    return HuggingFaceEndpoint(repo_id="tiiuae/falcon-7b-instruct", 
-                               huggingfacehub_api_token=huggingface_api_token, 
-                               temperature=0.2)
+    return create_llm()
 
 # Streamlit UI
 st.set_page_config(page_title="MultiDoc-ChatBot", page_icon="🤖")
@@ -125,37 +169,44 @@ if user_input := st.chat_input("Ask a question..."):
     if "qa_system" in st.session_state:
         with st.chat_message("assistant"):
             message_placeholder = st.empty()
-            bot_response = st.session_state.qa_system.invoke(user_input)
+            try:
+                bot_response = st.session_state.qa_system.invoke(user_input)
+            except Exception as e:
+                st.error(f"Could not get an answer: {e}")
+                st.stop()
             
             if isinstance(bot_response, dict):
                 extracted_response = bot_response.get("result", "No response available").strip()
             else:
-                extracted_response = bot_response.strip()
+                extracted_response = str(bot_response).strip()
             
             for i in range(len(extracted_response)):
                 message_placeholder.markdown(extracted_response[:i+1])
-                time.sleep(0.003)
+                time.sleep(_env_float("TYPING_DELAY_DOC", 0.003))
             
             st.session_state.messages.append({"role": "assistant", "content": extracted_response})
     else:
         with st.chat_message("assistant"):
             message_placeholder = st.empty()
-            bot_response = st.session_state.general_chatbot.invoke(user_input)
+            try:
+                bot_response = st.session_state.general_chatbot.invoke(user_input)
+            except Exception as e:
+                st.error(f"Could not get a response: {e}")
+                st.stop()
             
-            if isinstance(bot_response, dict):
+            if hasattr(bot_response, "content"):
+                extracted_response = bot_response.content.strip()
+            elif isinstance(bot_response, dict):
                 extracted_response = bot_response.get("result", "No response available").strip()
             else:
-                extracted_response = bot_response.strip()
+                extracted_response = str(bot_response).strip()
             
             for i in range(len(extracted_response)):
                 message_placeholder.markdown(extracted_response[:i+1])
-                time.sleep(0.02)
+                time.sleep(_env_float("TYPING_DELAY_CHAT", 0.02))
             
             st.session_state.messages.append({"role": "assistant", "content": extracted_response})
 
 if st.button("Clear Chat"):
     st.session_state.messages = []
     st.rerun()
-
-
-#For better compatibility with API calls over Google Colab, I recommend using a model like "tiiuae/falcon-7b-instruct" or "bigscience/bloomz-7b1", both of which are well-suited for answering questions and are optimized for inference tasks via the Hugging Face Inference API.
